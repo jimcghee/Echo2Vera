@@ -19,10 +19,10 @@ Finishing 3 is my next task.
 
 If you're already using Martin's interface, just copy and paste in this one over it.  Probably should save your current program first, just in case.
 
-Of course, the standard disclaimers:
-Use this at your own risk.
-YMMV, 
-Performed on a closed track by professional drivers, 
-Kids, don't try this at home
-and if your dog gets eaten by Zombies tonight, don't blame me, you wer WARNED!!!
+And of course, this comes with the standard disclaimers: 
+Use this at your own risk. 
+YMMV.
+Performed on a closed track by professional drivers.
+Kids, don't try this at home, and
+if your dog gets eaten by Zombies tonight, don't blame me, you were WARNED!!!
 ;-)
