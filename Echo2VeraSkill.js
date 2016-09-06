@@ -344,7 +344,7 @@ function handleControl(event, context) {
                     }
                 });
             })
-        } else if (event.header.name === 'IncrementTargetTemperatureRequest') {
+        } else if (event.header.name === 'xxxIncrementTargetTemperatureRequest') {
             getCurrentTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId,function(currentTemperatureString){
                 var currentTemperatureInF = Number(currentTemperatureString);
                 if(isNaN(currentTemperatureInF)){
@@ -365,7 +365,7 @@ function handleControl(event, context) {
                     });
                 }
             });
-        } else if (event.header.name === 'DecrementTargetTemperatureRequest') {
+        } else if (event.header.name === 'xxxDecrementTargetTemperatureRequest') {
             getCurrentTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId,function(currentTemperatureString){
                 var currentTemperatureInF = Number(currentTemperatureString);
                 if(isNaN(currentTemperatureInF)){
