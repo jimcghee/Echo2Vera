@@ -328,64 +328,80 @@ function handleControl(event, context) {
                 }
             });
         } else if (event.header.name === 'SetTargetTemperatureRequest') {
-            getTemperatureMode(ServerRelay,PK_Device,RelaySessionToken,applianceId,function(temperatureModeString){
-                var temperatureMode = convertVera2Echo(temperatureModeString);
-                var targetTemperatureInC = event.payload.targetTemperature.value;
-                var targetTemperatureInF = 32 + (targetTemperatureInC * 1.8);
-                setTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId, targetTemperatureInF.toFixed(),function(response){
+            getTemperatureMode(ServerRelay, PK_Device, RelaySessionToken, applianceId, function(temperatureMode){
+                var targetTemperature4Echo = event.payload.targetTemperature.value;	// Always in C
+                var targetTemperature4Vera = 32 + (targetTemperature4Echo * 1.8);	// Cvt to F
+                setTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId, targetTemperature4Vera.toFixed(),function(response){
                     if(response.indexOf("ERROR")===0){
                         context.fail(generateControlError(responseType, 'TargetHardwareMalfunctionError', response));
                     } else {
-                        var payloads = {achievedState: {targetTemperature:{value: targetTemperatureInC},mode:{value:temperatureMode}},
-                                        previousState: {targetTemperature:{value: targetTemperatureInC},mode:{value:temperatureMode}},
-                                        targetTemperature:{value: targetTemperatureInC},temperatureMode:{value:temperatureMode}};
+                        var payloads = {achievedState: {targetTemperature:{value: targetTemperature4Echo},mode:{value:temperatureMode}},
+                                        previousState: {targetTemperature:{value: targetTemperature4Echo},mode:{value:temperatureMode}},
+                                        targetTemperature:{value: targetTemperature4Echo},temperatureMode:{value:temperatureMode}};
                         var result = {header: headers,payload: payloads};
                         context.succeed(result);
                     }
                 });
             })
-        } else if (event.header.name === 'xxxIncrementTargetTemperatureRequest') {
-            getCurrentTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId,function(currentTemperatureString){
-                var currentTemperatureInF = Number(currentTemperatureString);
-                if(isNaN(currentTemperatureInF)){
-                    context.fail(generateControlError(responseType, 'TargetConnectivityUnstableError', 'Could not get current temperature'));
-                } else {
-                    var targetTemperatureInF = currentTemperatureInF + (event.payload.deltaTemperature.value * 1.8);
-                    var targetTemperatureInC = (targetTemperatureInF - 32) / 1.8;
-                    setTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId,targetTemperatureInF.toFixed(),function(response){
-                        if(response.indexOf("ERROR")===0){
-                            context.fail(generateControlError(responseType, 'TargetHardwareMalfunctionError', response));
-                        } else {
-                            var payloads = {achievedState: {targetTemperature:{value: targetTemperatureInC},mode:{value:"AUTO"}},
-                                            previousState: {targetTemperature:{value: targetTemperatureInC},mode:{value:"AUTO"}},
-                                            targetTemperature:{value: targetTemperatureInC},temperatureMode:{value:"AUTO"}};
-                            var result = {header: headers,payload: payloads};
-                            context.succeed(result);
-                        }
-                    });
-                }
-            });
-        } else if (event.header.name === 'xxxDecrementTargetTemperatureRequest') {
-            getCurrentTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId,function(currentTemperatureString){
-                var currentTemperatureInF = Number(currentTemperatureString);
-                if(isNaN(currentTemperatureInF)){
-                    context.fail(generateControlError(responseType, 'TargetConnectivityUnstableError', 'Could not get current temperature'));
-                } else {
-                    var targetTemperatureInF = currentTemperatureInF - (event.payload.deltaTemperature.value * 1.8);
-                    var targetTemperatureInC = (targetTemperatureInF - 32) / 1.8;
-                    setTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId,targetTemperatureInF.toFixed(),function(response){
-                        if(response.indexOf("ERROR")===0){
-                            context.fail(generateControlError(responseType, 'TargetHardwareMalfunctionError', response));
-                        } else {
-                            var payloads = {achievedState: {targetTemperature:{value: targetTemperatureInC},mode:{value:"AUTO"}},
-                                            previousState: {targetTemperature:{value: targetTemperatureInC},mode:{value:"AUTO"}},
-                                            targetTemperature:{value: targetTemperatureInC},temperatureMode:{value:"AUTO"}};
-                            var result = {header: headers,payload: payloads};
-                            context.succeed(result);
-                        }
-                    });
-                }
-            });
+        } else if (event.header.name === 'IncrementTargetTemperatureRequest') {
+            getTemperatureMode(ServerRelay, PK_Device, RelaySessionToken, applianceId, function(temperatureMode){
+				getCurrentTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId,function(currentTemperatureString){
+					var currentTemperature4Vera = Number(currentTemperatureString);	// Always in F
+					if(isNaN(currentTemperature4Vera)){
+						context.fail(generateControlError(responseType, 'TargetConnectivityUnstableError', 'Could not get current temperature'));
+					} else {
+						var currentTemperature4Echo = (currentTemperature4Vera - 32) / 1.8;
+						var deltaTemperature4Echo = event.payload.deltaTemperature.value;
+						var targetTemperature4Echo = currentTemperature4Echo + deltaTemperature4Echo;
+						var targetTemperature4Vera = (targetTemperature4Echo * 1.8) + 32
+					log ("Requested Target Delta: ", deltaTemperature4Echo);
+						if (deltaTemperature4Echo > 50) {
+					log ("Requested Target Temp: ", currentTemperature4Echo);
+						   var payloads = {achievedState: {targetTemperature:{value: currentTemperature4Echo},mode:{value:temperatureMode}},
+											previousState: {targetTemperature:{value: currentTemperature4Echo},mode:{value:temperatureMode}},
+											targetTemperature:{value: currentTemperature4Echo},temperatureMode:{value:temperatureMode}};
+							var result = {header: headers,payload: payloads};
+							context.succeed(result);
+						} else {
+					log ("Houldn't get here: ", currentTemperature4Echo);
+							setTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId,targetTemperature4Vera.toFixed(),function(response){
+								if(response.indexOf("ERROR")===0){
+									context.fail(generateControlError(responseType, 'TargetHardwareMalfunctionError', response));
+								} else {
+									var payloads = {achievedState: {targetTemperature:{value: targetTemperature4Echo},mode:{value:temperatureMode}},
+													previousState: {targetTemperature:{value: targetTemperature4Echo},mode:{value:temperatureMode}},
+													targetTemperature:{value: targetTemperature4Echo},temperatureMode:{value:temperatureMode}};
+									var result = {header: headers,payload: payloads};
+									context.succeed(result);
+								}
+							});
+						}
+					}
+				});
+			});
+        } else if (event.header.name === 'DecrementTargetTemperatureRequest') {
+            getTemperatureMode(ServerRelay, PK_Device, RelaySessionToken, applianceId, function(temperatureMode){
+				getCurrentTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId,function(currentTemperatureString){
+					var currentTemperature4Vera = Number(currentTemperatureString);
+					if(isNaN(currentTemperature4Vera)){
+						context.fail(generateControlError(responseType, 'TargetConnectivityUnstableError', 'Could not get current temperature'));
+					} else {
+						var targetTemperature4Vera = currentTemperature4Vera - (event.payload.deltaTemperature.value * 1.8);
+						var targetTemperature4Echo = (targetTemperature4Vera - 32) / 1.8;
+						setTemperature(ServerRelay,PK_Device,RelaySessionToken,applianceId,targetTemperature4Vera.toFixed(),function(response){
+							if(response.indexOf("ERROR")===0){
+								context.fail(generateControlError(responseType, 'TargetHardwareMalfunctionError', response));
+							} else {
+								var payloads = {achievedState: {targetTemperature:{value: targetTemperature4Echo},mode:{value:temperatureMode}},
+												previousState: {targetTemperature:{value: targetTemperature4Echo},mode:{value:temperatureMode}},
+												targetTemperature:{value: targetTemperature4Echo},temperatureMode:{value:temperatureMode}};
+								var result = {header: headers,payload: payloads};
+								context.succeed(result);
+							}
+						});
+					}
+				});
+			});
         } else {
             // error
         }
@@ -569,36 +585,28 @@ function getTemperatureMode( ServerRelay, PK_Device, RelaySessionToken, deviceId
                     '/port_3480/data_request?id=variableget&DeviceNum=' +
                     deviceId.substring(1) +
                     '&serviceId=urn:upnp-org:serviceId:HVAC_UserOperatingMode1&Variable=ModeStatus',
-
                     ServerRelay,
                     RelaySessionToken,
                     function(response)
     {
-        cbfunc(response);
+		switch (response) 
+		{
+			case "CoolOn":
+				cbfunc("Cool");
+				break;
+			case "HeatOn":
+				cbfunc("Heat");
+				break;
+			case "AutoChangeOver":
+				cbfunc("Auto");
+				break;
+			case "Off":
+				cbfunc("Off");
+				break;
+			default:
+				cbfunc("Unknown");
+		}
     });
-}
-
-function convertVera2Echo(VeraMode)
-{
-    var temperatureMode;
-    switch (VeraMode) 
-    {
-        case "CoolOn":
-            temperatureMode = "Cool";
-            break;
-        case "HeatOn":
-            temperatureMode = "Heat";
-            break;
-        case "AutoChangeOver":
-            temperatureMode = "Auto";
-            break;
-        case "Off":
-            temperatureMode = "Off";
-            break;
-        default:
-            temperatureMode = "Unknown";
-    }
-    return temperatureMode;
 }
 
 
